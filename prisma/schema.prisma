@@ -1,0 +1,205 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  watchlists    Watchlist[]
+  reviews       Review[]
+  favorites     Favorite[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Main content model for all shows/movies
+model Content {
+  id          String      @id @default(cuid())
+  title       String
+  titleAlt    String?     // Alternative titles
+  description String?
+  type        String      // ANIME, KANIME, CANIME, JDRAMA, CDRAMA, KDRAMA
+  year        Int
+  rating      Float       @default(0)
+  posterUrl   String?
+  backdropUrl String?
+  status      String      @default("Ongoing") // Ongoing, Completed, etc.
+  studio      String?
+  network     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  genres      ContentGenre[]
+  episodes    Episode[]
+  watchlists  Watchlist[]
+  favorites   Favorite[]
+  reviews     Review[]
+  videoSources VideoSource[]
+}
+
+// Genre model
+model Genre {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  contents    ContentGenre[]
+}
+
+// Many-to-many relationship between Content and Genre
+model ContentGenre {
+  contentId   String
+  genreId     String
+  content     Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  genre       Genre      @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  
+  @@id([contentId, genreId])
+}
+
+// Episode model
+model Episode {
+  id          String      @id @default(cuid())
+  contentId   String
+  episodeNumber Int
+  title       String?
+  description String?
+  duration    Int?        // in minutes
+  airDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  content     Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  videoSources VideoSource[]
+}
+
+// Video source model for flexible embed system
+model VideoSource {
+  id          String      @id @default(cuid())
+  contentId   String?
+  episodeId   String?
+  sourceType  String      // youtube, vimeo, embed, etc.
+  sourceUrl   String
+  language    String      @default("sub")
+  quality     String?     // 1080p, 720p, etc.
+  isActive    Boolean     @default(true)
+  priority    Int         @default(0) // Higher priority = preferred source
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  content     Content?    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episode     Episode?    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+}
+
+// User watchlist
+model Watchlist {
+  id          String      @id @default(cuid())
+  userId      String
+  contentId   String
+  status      String      @default("Plan to Watch") // Plan to Watch, Watching, Completed, Dropped
+  progress    Int         @default(0) // current episode
+  score       Int?        // user rating 1-10
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contentId])
+}
+
+// User favorites
+model Favorite {
+  id          String      @id @default(cuid())
+  userId      String
+  contentId   String
+  createdAt   DateTime    @default(now())
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contentId])
+}
+
+// User reviews
+model Review {
+  id          String      @id @default(cuid())
+  userId      String
+  contentId   String
+  rating      Int         // 1-10
+  title       String?
+  text        String
+  containsSpoilers Boolean @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+// Blog posts
+model BlogPost {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  excerpt     String?
+  content     String
+  author      String
+  category    String
+  published   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  publishedAt DateTime?
+}
