@@ -15,9 +15,10 @@ interface VideoSource {
 interface VideoPlayerProps {
   sources: VideoSource[];
   defaultSource?: VideoSource;
+  onEnded?: () => void;
 }
 
-export default function VideoPlayer({ sources, defaultSource }: VideoPlayerProps) {
+export default function VideoPlayer({ sources, defaultSource, onEnded }: VideoPlayerProps) {
   const [currentSource, setCurrentSource] = useState(defaultSource || sources[0]);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,7 +35,7 @@ export default function VideoPlayer({ sources, defaultSource }: VideoPlayerProps
         return (
           <iframe
             className="w-full h-full"
-            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             onLoad={() => setLoading(false)}
