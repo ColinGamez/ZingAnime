@@ -36,7 +36,6 @@ interface TMDBTV {
     name: string;
   }>;
   origin_country: string[];
-  original_language: string;
   popularity: number;
 }
 
@@ -130,7 +129,7 @@ export async function getTrendingCDramas(limit: number = 10): Promise<TMDBTV[]> 
   }
 }
 
-export async function getTMDBImageURL(path: string, size: string = 'original'): string {
+export function getTMDBImageURL(path: string, size: string = 'original'): string {
   if (!path) return '';
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -28,7 +28,57 @@ interface Content {
   genres: ContentGenre[];
 }
 
-export default function Catalog() {
+const genres = ['All', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller'];
+const types = ['All', 'ANIME', 'KDRAMA', 'CDRAMA', 'JDRAMA'];
+
+const getTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    'ANIME': 'Anime',
+    'KDRAMA': 'K-Drama',
+    'CDRAMA': 'C-Drama',
+    'JDRAMA': 'J-Drama',
+  };
+  return labels[type] || type;
+};
+
+const getTypeEmoji = (type: string) => {
+  const emojis: Record<string, string> = {
+    'ANIME': '🎌',
+    'JDRAMA': '🎭',
+    'CDRAMA': '🏮',
+    'KDRAMA': '🌸',
+  };
+  return emojis[type] || '📺';
+};
+
+const getTypeGradient = (type: string) => {
+  const gradients: Record<string, string> = {
+    'ANIME': 'from-red-500 via-pink-500 to-purple-600',
+    'JDRAMA': 'from-pink-500 via-rose-500 to-red-500',
+    'CDRAMA': 'from-amber-500 via-orange-500 to-red-600',
+    'KDRAMA': 'from-purple-500 via-pink-500 to-rose-500',
+  };
+  return gradients[type] || 'from-gray-500 via-gray-600 to-gray-700';
+};
+
+const getGenreColor = (genre: string) => {
+  const colors: Record<string, string> = {
+    'Action': 'bg-red-500',
+    'Adventure': 'bg-green-500',
+    'Comedy': 'bg-yellow-500',
+    'Drama': 'bg-purple-500',
+    'Fantasy': 'bg-indigo-500',
+    'Horror': 'bg-gray-800',
+    'Mecha': 'bg-blue-500',
+    'Romance': 'bg-pink-500',
+    'Sci-Fi': 'bg-cyan-500',
+    'Slice of Life': 'bg-teal-500',
+    'Thriller': 'bg-orange-500',
+  };
+  return colors[genre] || 'bg-gray-500';
+};
+
+function CatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -40,62 +90,6 @@ export default function Catalog() {
   const [content, setContent] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [useExternalSearch, setUseExternalSearch] = useState(false);
-
-  const genres = ['All', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller'];
-  const types = ['All', 'ANIME', 'KANIME', 'CANIME', 'JDRAMA', 'CDRAMA', 'KDRAMA'];
-
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      'ANIME': 'Anime',
-      'KANIME': 'K-Anime',
-      'CANIME': 'C-Anime',
-      'JDRAMA': 'J-Drama',
-      'CDRAMA': 'C-Drama',
-      'KDRAMA': 'K-Drama',
-    };
-    return labels[type] || type;
-  };
-
-  const getTypeEmoji = (type: string) => {
-    const emojis: Record<string, string> = {
-      'ANIME': '🎌',
-      'KANIME': '🇰🇷',
-      'CANIME': '🇨🇳',
-      'JDRAMA': '🎭',
-      'CDRAMA': '🏮',
-      'KDRAMA': '🌸',
-    };
-    return emojis[type] || '📺';
-  };
-
-  const getTypeGradient = (type: string) => {
-    const gradients: Record<string, string> = {
-      'ANIME': 'from-red-500 via-pink-500 to-purple-600',
-      'KANIME': 'from-blue-500 via-cyan-500 to-teal-500',
-      'CANIME': 'from-red-600 via-yellow-500 to-orange-500',
-      'JDRAMA': 'from-pink-500 via-rose-500 to-red-500',
-      'CDRAMA': 'from-amber-500 via-orange-500 to-red-600',
-      'KDRAMA': 'from-purple-500 via-pink-500 to-rose-500',
-    };
-    return gradients[type] || 'from-gray-500 via-gray-600 to-gray-700';
-  };
-
-  const getGenreColor = (genre: string) => {
-    const colors: Record<string, string> = {
-      'Action': 'bg-red-500',
-      'Adventure': 'bg-green-500',
-      'Comedy': 'bg-yellow-500',
-      'Drama': 'bg-purple-500',
-      'Fantasy': 'bg-indigo-500',
-      'Horror': 'bg-gray-800',
-      'Mecha': 'bg-blue-500',
-      'Romance': 'bg-pink-500',
-      'Sci-Fi': 'bg-cyan-500',
-      'Slice of Life': 'bg-teal-500',
-      'Thriller': 'bg-orange-500',
-    };
-    return colors[genre] || 'bg-gray-500';
-  };
 
   useEffect(() => {
     setSelectedType(typeParam);
@@ -366,5 +360,19 @@ export default function Catalog() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Catalog() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12 text-purple-600 dark:text-purple-300">
+          Loading catalog...
+        </div>
+      </div>
+    </div>}>
+      <CatalogContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import VideoPlayer from '@/components/VideoPlayer';
 
@@ -19,12 +19,12 @@ interface VideoSource {
   sourceType: string;
   sourceUrl: string;
   language: string;
-  quality: string | null;
+  quality?: string;
   isActive: boolean;
   priority: number;
 }
 
-export default function Watch() {
+function WatchContent() {
   const searchParams = useSearchParams();
   const contentId = searchParams.get('contentId');
   const episodeNumber = searchParams.get('episode');
@@ -113,5 +113,19 @@ export default function Watch() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Watch() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12 text-purple-600 dark:text-purple-300">
+          Loading episode...
+        </div>
+      </div>
+    </div>}>
+      <WatchContent />
+    </Suspense>
   );
 }

@@ -56,7 +56,7 @@ export default function Blog() {
       'Guides': '📖',
       'Comparison': '⚖️',
       'Culture': '🎭',
-      'Culture': '🎭',
+      'Industry': '🏭',
     };
     return emojis[category] || '📰';
   };
