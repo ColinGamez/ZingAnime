@@ -38,7 +38,7 @@ export const ContentCard = memo(function ContentCard({
   const posterSrc = posterUrl ? getPosterUrl(posterUrl) : getPlaceholderImage('poster');
 
   const handleWatch = () => {
-    router.push(`/watch?contentId=${id}&episode=1`);
+    router.push(`/content/${id}`);
   };
 
   const handleAddToWatchlist = (e: React.MouseEvent) => {
@@ -87,10 +87,10 @@ export const ContentCard = memo(function ContentCard({
           <Button
             variant="primary"
             size="sm"
-            onClick={handleWatch}
+            onClick={() => router.push(`/content/${id}`)}
             className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200"
           >
-            Watch
+            View Details
           </Button>
         </div>
       </div>

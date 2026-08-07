@@ -76,7 +76,7 @@ export default function Watchlist() {
   };
 
   const handleWatch = (contentId: string, progress: number) => {
-    router.push(`/watch?contentId=${contentId}&episode=${progress + 1}`);
+    router.push(`/content/${contentId}`);
   };
 
   if (status === 'loading' || loading) {
@@ -138,7 +138,10 @@ export default function Watchlist() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
+                    <h3 
+                      className="font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                      onClick={() => router.push(`/content/${item.content.id}`)}
+                    >
                       {item.content.title}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
