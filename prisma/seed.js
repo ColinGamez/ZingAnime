@@ -181,6 +181,40 @@ async function main() {
     },
   });
 
+  const descendantsOfTheSun = await prisma.content.upsert({
+    where: { id: 'kdrama-2' },
+    update: {},
+    create: {
+      id: 'kdrama-2',
+      title: 'Descendants of the Sun',
+      titleAlt: 'Taeyang-ui Huujae',
+      description: 'A love story between a captain of a special forces team and a surgeon who fall in love while on a mission in war-torn country.',
+      type: ContentType.KDRAMA,
+      year: 2016,
+      rating: 8.9,
+      status: 'Completed',
+      studio: 'KBS',
+      network: 'KBS2',
+    },
+  });
+
+  const crashLandingOnYou = await prisma.content.upsert({
+    where: { id: 'kdrama-3' },
+    update: {},
+    create: {
+      id: 'kdrama-3',
+      title: 'Crash Landing on You',
+      titleAlt: 'Saenggwagoi Chak-hang',
+      description: 'A successful entrepreneur crash-lands in North Korea and falls in love with a North Korean army officer.',
+      type: ContentType.KDRAMA,
+      year: 2019,
+      rating: 8.7,
+      status: 'Completed',
+      studio: 'Studio Dragon',
+      network: 'tvN',
+    },
+  });
+
   // Create J-Drama
   const hanaYoriDango = await prisma.content.upsert({
     where: { id: 'jdrama-1' },
@@ -196,6 +230,23 @@ async function main() {
       status: 'Completed',
       studio: 'TBS',
       network: 'TBS',
+    },
+  });
+
+  const itaewonClass = await prisma.content.upsert({
+    where: { id: 'jdrama-2' },
+    update: {},
+    create: {
+      id: 'jdrama-2',
+      title: 'Itaewon Class',
+      titleAlt: 'Itaewon Keurasseu',
+      description: 'An ex-convict opens a bar in Itaewon and seeks revenge on the family responsible for his imprisonment.',
+      type: ContentType.JDRAMA,
+      year: 2020,
+      rating: 8.5,
+      status: 'Completed',
+      studio: 'JTBC',
+      network: 'JTBC',
     },
   });
 
@@ -231,8 +282,14 @@ async function main() {
     { contentId: attackOnTitan.id, genreId: genres[5].id }, // Horror
     { contentId: goblin.id, genreId: genres[3].id }, // Drama
     { contentId: goblin.id, genreId: genres[7].id }, // Romance
+    { contentId: descendantsOfTheSun.id, genreId: genres[3].id }, // Drama
+    { contentId: descendantsOfTheSun.id, genreId: genres[7].id }, // Romance
+    { contentId: crashLandingOnYou.id, genreId: genres[3].id }, // Drama
+    { contentId: crashLandingOnYou.id, genreId: genres[7].id }, // Romance
     { contentId: hanaYoriDango.id, genreId: genres[3].id }, // Drama
     { contentId: hanaYoriDango.id, genreId: genres[7].id }, // Romance
+    { contentId: itaewonClass.id, genreId: genres[3].id }, // Drama
+    { contentId: itaewonClass.id, genreId: genres[10].id }, // Thriller
     { contentId: untamed.id, genreId: genres[4].id }, // Fantasy
     { contentId: untamed.id, genreId: genres[3].id }, // Drama
   ];
@@ -262,7 +319,10 @@ async function main() {
     { contentId: deathNote.id, episodeNumber: 1, title: 'Rebirth', duration: 23 },
     { contentId: attackOnTitan.id, episodeNumber: 1, title: 'To You, in 2000 Years', duration: 24 },
     { contentId: goblin.id, episodeNumber: 1, title: 'Episode 1', duration: 60 },
+    { contentId: descendantsOfTheSun.id, episodeNumber: 1, title: 'Episode 1', duration: 60 },
+    { contentId: crashLandingOnYou.id, episodeNumber: 1, title: 'Episode 1', duration: 60 },
     { contentId: hanaYoriDango.id, episodeNumber: 1, title: 'Episode 1', duration: 45 },
+    { contentId: itaewonClass.id, episodeNumber: 1, title: 'Episode 1', duration: 60 },
     { contentId: untamed.id, episodeNumber: 1, title: 'Episode 1', duration: 45 },
   ];
 
@@ -300,8 +360,17 @@ async function main() {
   const goblinEp1 = await prisma.episode.findFirst({
     where: { contentId: goblin.id, episodeNumber: 1 },
   });
+  const descendantsOfTheSunEp1 = await prisma.episode.findFirst({
+    where: { contentId: descendantsOfTheSun.id, episodeNumber: 1 },
+  });
+  const crashLandingOnYouEp1 = await prisma.episode.findFirst({
+    where: { contentId: crashLandingOnYou.id, episodeNumber: 1 },
+  });
   const hanaYoriDangoEp1 = await prisma.episode.findFirst({
     where: { contentId: hanaYoriDango.id, episodeNumber: 1 },
+  });
+  const itaewonClassEp1 = await prisma.episode.findFirst({
+    where: { contentId: itaewonClass.id, episodeNumber: 1 },
   });
   const untamedEp1 = await prisma.episode.findFirst({
     where: { contentId: untamed.id, episodeNumber: 1 },
@@ -311,20 +380,29 @@ async function main() {
 
   // Create sample video sources
   const videoSources = [
-    // Evangelion episodes
-    { contentId: evangelion.id, episodeId: evangelionEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 1 },
+    // Evangelion episodes - Multiple sources for backup
+    { contentId: evangelion.id, episodeId: evangelionEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 3 },
     { contentId: evangelion.id, episodeId: null, sourceType: 'embed', sourceUrl: 'https://example.com/embed/evangelion-1', language: 'sub', quality: '720p', isActive: true, priority: 2 },
+    { contentId: evangelion.id, episodeId: null, sourceType: 'dailymotion', sourceUrl: 'https://www.dailymotion.com/video/x8example', language: 'sub', quality: '1080p', isActive: true, priority: 1 },
     // Cowboy Bebop episodes
-    { contentId: cowboyBebop.id, episodeId: cowboyBebopEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 1 },
+    { contentId: cowboyBebop.id, episodeId: cowboyBebopEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 2 },
+    { contentId: cowboyBebop.id, episodeId: null, sourceType: 'vimeo', sourceUrl: 'https://vimeo.com/example', language: 'sub', quality: '720p', isActive: true, priority: 1 },
     // FMA episodes
-    { contentId: fma.id, episodeId: fmaEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 1 },
+    { contentId: fma.id, episodeId: fmaEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 2 },
+    { contentId: fma.id, episodeId: null, sourceType: 'gdrive', sourceUrl: 'https://drive.google.com/file/d/example', language: 'sub', quality: '1080p', isActive: true, priority: 1 },
     // Death Note episodes
     { contentId: deathNote.id, episodeId: deathNoteEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 1 },
     // Attack on Titan episodes
-    { contentId: attackOnTitan.id, episodeId: attackOnTitanEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 1 },
-    // Drama episodes
+    { contentId: attackOnTitan.id, episodeId: attackOnTitanEp1?.id, sourceType: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', language: 'sub', quality: '480p', isActive: true, priority: 2 },
+    { contentId: attackOnTitan.id, episodeId: null, sourceType: 'embed', sourceUrl: 'https://example.com/embed/aot-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    // K-Drama episodes
     { contentId: goblin.id, episodeId: goblinEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/goblin-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    { contentId: descendantsOfTheSun.id, episodeId: descendantsOfTheSunEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/dots-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    { contentId: crashLandingOnYou.id, episodeId: crashLandingOnYouEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/cloy-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    // J-Drama episodes
     { contentId: hanaYoriDango.id, episodeId: hanaYoriDangoEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/hana-yori-dango-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    { contentId: itaewonClass.id, episodeId: itaewonClassEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/itaewon-class-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
+    // C-Drama episodes
     { contentId: untamed.id, episodeId: untamedEp1?.id, sourceType: 'embed', sourceUrl: 'https://example.com/embed/untamed-1', language: 'sub', quality: '720p', isActive: true, priority: 1 },
   ];
 
@@ -360,34 +438,74 @@ async function main() {
   // Create sample blog posts
   const blogPosts = [
     {
-      title: 'Top 10 Hidden Gems from the 2000s',
-      slug: 'top-10-hidden-gems-2000s',
-      excerpt: 'Discover overlooked anime classics that deserve more attention from the golden era of anime.',
+      title: 'Top 10 Hidden Gem Anime from the 2000s You Missed',
+      slug: 'hidden-gems-2000s',
+      excerpt: 'From cult classics to underground masterpieces, discover the overlooked anime that defined the golden era but never got the mainstream recognition they deserved.',
       content: 'Full article content here...',
-      author: 'AnimeFan2024',
+      author: 'AnimeHunter',
       category: 'Recommendations',
       published: true,
       publishedAt: new Date('2024-01-15'),
     },
     {
-      title: 'The Evolution of Mecha Anime: From Gundam to Evangelion',
-      slug: 'evolution-mecha-anime',
-      excerpt: 'A deep dive into how mecha anime has evolved over the decades and shaped the industry.',
+      title: 'Why 2000s Anime Was the Golden Era',
+      slug: 'golden-era-2000s',
+      excerpt: 'The 2000s produced some of the most influential and beloved anime of all time. From Neon Genesis Evangelion to Fullmetal Alchemist, explore what made this decade so special.',
       content: 'Full article content here...',
-      author: 'MechaExpert',
+      author: 'RetroAnimeFan',
       category: 'Analysis',
       published: true,
       publishedAt: new Date('2024-01-10'),
     },
     {
-      title: 'Why Underground Anime is Making a Comeback',
-      slug: 'underground-anime-comeback',
-      excerpt: 'Exploring the resurgence of experimental and independent anime in the modern landscape.',
+      title: 'Underground Anime: Where to Find the Weirdest Stuff',
+      slug: 'underground-anime-guide',
+      excerpt: 'Beyond the mainstream hits lies a world of experimental, avant-garde, and just plain weird anime. Here\'s your guide to the underground scene.',
       content: 'Full article content here...',
-      author: 'IndieAnimeLover',
-      category: 'Culture',
+      author: 'CultClassicCollector',
+      category: 'Guides',
+      published: true,
+      publishedAt: new Date('2024-01-05'),
+    },
+    {
+      title: 'K-Drama vs J-Drama: What\'s the Difference?',
+      slug: 'kdrama-vs-jdrama',
+      excerpt: 'Both Asian dramas have their unique charm. From storytelling styles to production values, here\'s everything you need to know about choosing between K-dramas and J-dramas.',
+      content: 'Full article content here...',
+      author: 'DramaExpert',
+      category: 'Comparison',
       published: true,
       publishedAt: new Date('2024-01-01'),
+    },
+    {
+      title: 'The Rise of Chinese Anime (Donghua)',
+      slug: 'rise-of-donghua',
+      excerpt: 'Chinese animation has exploded in quality and popularity. From traditional tales to modern sci-fi, discover the best donghua you should be watching.',
+      content: 'Full article content here...',
+      author: 'AsianMediaWatcher',
+      category: 'Industry',
+      published: true,
+      publishedAt: new Date('2023-12-28'),
+    },
+    {
+      title: 'Mecha Anime: More Than Just Giant Robots',
+      slug: 'mecha-anime-deep-dive',
+      excerpt: 'From Gundam to Evangelion, mecha anime has explored profound themes about war, humanity, and technology. Here\'s why the genre is deeper than you think.',
+      content: 'Full article content here...',
+      author: 'MechaEnthusiast',
+      category: 'Analysis',
+      published: true,
+      publishedAt: new Date('2023-12-20'),
+    },
+    {
+      title: 'Asian Drama Culture: More Than Just Romance',
+      slug: 'asian-drama-culture',
+      excerpt: 'From historical epics to modern rom-coms, Asian dramas offer a unique window into different cultures. Explore the cultural significance and global impact.',
+      content: 'Full article content here...',
+      author: 'CultureExplorer',
+      category: 'Culture',
+      published: true,
+      publishedAt: new Date('2023-12-15'),
     },
   ];
 

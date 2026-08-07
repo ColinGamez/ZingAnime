@@ -73,11 +73,15 @@ model Content {
   type        String      // ANIME, KANIME, CANIME, JDRAMA, CDRAMA, KDRAMA
   year        Int
   rating      Float       @default(0)
-  posterUrl   String?
-  backdropUrl String?
+  posterUrl   String?     // Main poster image URL
+  backdropUrl String?     // Background/banner image URL
   status      String      @default("Ongoing") // Ongoing, Completed, etc.
   studio      String?
   network     String?
+  malId       Int?        // MyAnimeList ID for anime
+  mdlId       Int?        // MyDramaList ID for dramas
+  tmdbId      Int?        // TMDB ID for all content
+  tmdbType    String?     // TMDB content type (movie/tv)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   
