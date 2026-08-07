@@ -3,172 +3,107 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-
-interface Genre {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface ContentGenre {
-  genre: Genre;
-}
+import { ContentCard } from '@/ui/ContentCard';
+import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { Select } from '@/ui/Select';
+import { Badge } from '@/ui/Badge';
+import { LoadingSpinner } from '@/ui/LoadingSpinner';
+import { EmptyState } from '@/ui/EmptyState';
+import { Skeleton } from '@/ui/Skeleton';
+import { Card } from '@/ui/Card';
+import { useToast } from '@/ui/Toast';
+import { useContent } from '@/hooks/useContent';
+import { useDebounce } from '@/hooks/useDebounce';
+import { GENRES, SORT_OPTIONS, pagination } from '@/constants/content';
+import { contentTypes, contentTypeLabels } from '@/constants/design';
 
 interface Content {
   id: string;
   title: string;
   titleAlt: string | null;
-  description: string | null;
-  type: string;
+  posterUrl: string | null;
   year: number;
   rating: number;
-  posterUrl: string | null;
-  backdropUrl: string | null;
-  status: string;
-  genres: ContentGenre[];
+  type: string;
+  genres: Array<{ genre: { name: string } }>;
+  status?: string;
 }
-
-const genres = ['All', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller'];
-const types = ['All', 'ANIME', 'KDRAMA', 'CDRAMA', 'JDRAMA'];
-
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    'ANIME': 'Anime',
-    'KDRAMA': 'K-Drama',
-    'CDRAMA': 'C-Drama',
-    'JDRAMA': 'J-Drama',
-  };
-  return labels[type] || type;
-};
-
-const getTypeEmoji = (type: string) => {
-  const emojis: Record<string, string> = {
-    'ANIME': '🎌',
-    'JDRAMA': '🎭',
-    'CDRAMA': '🏮',
-    'KDRAMA': '🌸',
-  };
-  return emojis[type] || '📺';
-};
-
-const getTypeGradient = (type: string) => {
-  const gradients: Record<string, string> = {
-    'ANIME': 'from-red-500 via-pink-500 to-purple-600',
-    'JDRAMA': 'from-pink-500 via-rose-500 to-red-500',
-    'CDRAMA': 'from-amber-500 via-orange-500 to-red-600',
-    'KDRAMA': 'from-purple-500 via-pink-500 to-rose-500',
-  };
-  return gradients[type] || 'from-gray-500 via-gray-600 to-gray-700';
-};
-
-const getGenreColor = (genre: string) => {
-  const colors: Record<string, string> = {
-    'Action': 'bg-red-500',
-    'Adventure': 'bg-green-500',
-    'Comedy': 'bg-yellow-500',
-    'Drama': 'bg-purple-500',
-    'Fantasy': 'bg-indigo-500',
-    'Horror': 'bg-gray-800',
-    'Mecha': 'bg-blue-500',
-    'Romance': 'bg-pink-500',
-    'Sci-Fi': 'bg-cyan-500',
-    'Slice of Life': 'bg-teal-500',
-    'Thriller': 'bg-orange-500',
-  };
-  return colors[genre] || 'bg-gray-500';
-};
 
 function CatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const { showToast } = useToast();
+  
   const typeParam = searchParams.get('type') || 'All';
+  const genreParam = searchParams.get('genre') || 'All';
+  const sortByParam = searchParams.get('sortBy') || 'rating';
+  const pageParam = parseInt(searchParams.get('page') || '1');
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('All');
+  const [selectedGenre, setSelectedGenre] = useState(genreParam);
   const [selectedType, setSelectedType] = useState(typeParam);
-  const [content, setContent] = useState<Content[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedSort, setSelectedSort] = useState(sortByParam);
+  const [currentPage, setCurrentPage] = useState(pageParam);
   const [useExternalSearch, setUseExternalSearch] = useState(false);
+  
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  const { data: content, loading, error, total, totalPages } = useContent({
+    search: useExternalSearch ? debouncedSearch : debouncedSearch || (searchParams.get('search') || ''),
+    genre: selectedGenre,
+    type: selectedType,
+    sortBy: selectedSort,
+    page: currentPage,
+    limit: pagination.defaultPageSize,
+  });
 
   useEffect(() => {
     setSelectedType(typeParam);
-  }, [typeParam]);
+    setSelectedGenre(genreParam);
+    setSelectedSort(sortByParam);
+    setCurrentPage(pageParam);
+  }, [typeParam, genreParam, sortByParam, pageParam]);
 
-  useEffect(() => {
-    if (useExternalSearch && searchTerm.length > 2) {
-      searchExternal();
-    } else if (!useExternalSearch) {
-      fetchContent();
-    }
-  }, [searchTerm, selectedGenre, selectedType, useExternalSearch, searchTerm.length]);
-
-  const fetchContent = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedGenre !== 'All') params.append('genre', selectedGenre);
-      if (selectedType !== 'All') params.append('type', selectedType);
-
-      const response = await fetch(`/api/content?${params.toString()}`);
-      const data = await response.json();
-      setContent(data);
-    } catch (error) {
-      console.error('Error fetching content:', error);
-    } finally {
-      setLoading(false);
-    }
+  const updateURL = (params: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === 'All' || value === '') {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+    });
+    router.push(`/catalog?${newParams.toString()}`);
   };
 
-  const searchExternal = async () => {
-    if (!searchTerm) return;
-    
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/tmdb?q=${encodeURIComponent(searchTerm)}`);
-      const data = await response.json();
-      
-      // Convert TMDB results to our content format
-      const convertedContent = [
-        // TMDB movies
-        ...(data.movies || []).map((item: any) => ({
-          id: `tmdb-movie-${item.id}`,
-          title: item.title,
-          titleAlt: item.original_title,
-          description: item.overview,
-          type: 'ANIME', // Default to anime for movies
-          year: item.release_date ? parseInt(item.release_date.split('-')[0]) : 2000,
-          rating: item.vote_average || 8.0,
-          posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-          backdropUrl: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : null,
-          status: 'Completed',
-          genres: item.genres ? item.genres.map((g: any) => ({ genre: { name: g.name, id: g.id, slug: g.name.toLowerCase() } })) : [],
-        })),
-        // TMDB TV shows
-        ...(data.tv || []).map((item: any) => ({
-          id: `tmdb-tv-${item.id}`,
-          title: item.name,
-          titleAlt: item.original_name,
-          description: item.overview,
-          type: item.original_language === 'ko' ? 'KDRAMA' : 
-                item.original_language === 'zh' ? 'CDRAMA' : 
-                item.original_language === 'ja' ? 'ANIME' : 'JDRAMA',
-          year: item.first_air_date ? parseInt(item.first_air_date.split('-')[0]) : 2000,
-          rating: item.vote_average || 8.0,
-          posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-          backdropUrl: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : null,
-          status: 'Ongoing',
-          genres: item.genres ? item.genres.map((g: any) => ({ genre: { name: g.name, id: g.id, slug: g.name.toLowerCase() } })) : [],
-        }))
-      ];
-      
-      setContent(convertedContent);
-    } catch (error) {
-      console.error('Error searching external API:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleGenreChange = (value: string) => {
+    setSelectedGenre(value);
+    setCurrentPage(1);
+    updateURL({ genre: value, page: '1' });
+  };
+
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value);
+    setCurrentPage(1);
+    updateURL({ type: value, page: '1' });
+  };
+
+  const handleSortChange = (value: string) => {
+    setSelectedSort(value);
+    setCurrentPage(1);
+    updateURL({ sortBy: value, page: '1' });
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateURL({ page: page.toString() });
   };
 
   const addToWatchlist = async (contentId: string) => {
@@ -178,185 +113,186 @@ function CatalogContent() {
     }
 
     try {
-      await fetch('/api/watchlist', {
+      const response = await fetch('/api/watchlist', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentId }),
       });
-      alert('Added to watchlist!');
+
+      if (!response.ok) throw new Error('Failed to add to watchlist');
+
+      showToast('success', 'Added to watchlist');
     } catch (error) {
       console.error('Error adding to watchlist:', error);
-      alert('Failed to add to watchlist');
+      showToast('error', 'Failed to add to watchlist');
     }
   };
 
+  const genreOptions = GENRES.map(genre => ({ value: genre, label: genre }));
+  const typeOptions = Object.entries(contentTypes).map(([value, label]) => ({
+    value,
+    label: contentTypeLabels[value as keyof typeof contentTypeLabels] || label,
+  }));
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold mb-8 text-purple-900 dark:text-purple-100">
-          {selectedType !== 'All' ? `${getTypeLabel(selectedType)} Catalog` : 'Content Catalog'}
-        </h1>
-        
-        {/* Search and Filter */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search content..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-900 dark:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <button
-                onClick={() => setUseExternalSearch(!useExternalSearch)}
-                className={`text-xs px-2 py-1 rounded ${useExternalSearch ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700'} hover:opacity-80`}
-              >
-                {useExternalSearch ? '🎬 TMDB' : '📦 Local'}
-              </button>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {selectedType !== 'All' ? `${contentTypeLabels[selectedType as keyof typeof contentTypeLabels] || selectedType} Catalog` : 'Content Catalog'}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            {total} {total === 1 ? 'title' : 'titles'} found
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="md:col-span-2">
+              <Input
+                placeholder="Search content..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                fullWidth
+              />
             </div>
+
+            {/* Genre Filter */}
+            <Select
+              value={selectedGenre}
+              onChange={(e) => handleGenreChange(e.target.value)}
+              options={genreOptions}
+              fullWidth
+            />
+
+            {/* Type Filter */}
+            <Select
+              value={selectedType}
+              onChange={(e) => handleTypeChange(e.target.value)}
+              options={typeOptions}
+              fullWidth
+            />
           </div>
-          <select
-            value={selectedGenre}
-            onChange={(e) => setSelectedGenre(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-900 dark:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {genres.map(genre => (
-              <option key={genre} value={genre}>{genre}</option>
-            ))}
-          </select>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-900 dark:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {types.map(type => (
-              <option key={type} value={type}>{getTypeLabel(type)}</option>
-            ))}
-          </select>
+
+          {/* Sort and External Search Toggle */}
+          <div className="flex items-center justify-between">
+            <Select
+              value={selectedSort}
+              onChange={(e) => handleSortChange(e.target.value)}
+              options={SORT_OPTIONS}
+              label="Sort by"
+            />
+            
+            <Button
+              variant={useExternalSearch ? 'primary' : 'secondary'}
+              onClick={() => setUseExternalSearch(!useExternalSearch)}
+              size="sm"
+            >
+              {useExternalSearch ? '🎬 TMDB Search' : '📦 Local Search'}
+            </Button>
+          </div>
         </div>
 
         {/* Content Grid */}
         {loading ? (
-          <div className="text-center py-12 text-purple-600 dark:text-purple-300">
-            Loading content...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {content.map(item => (
-              <div 
-                key={item.id} 
-                className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-gray-200 dark:border-gray-700"
-              >
-                {/* Card Image Area */}
-                <div 
-                  className={`relative h-64 overflow-hidden ${item.posterUrl ? '' : `bg-gradient-to-br ${getTypeGradient(item.type)}`} flex items-center justify-center`}
-                  onClick={() => router.push(`/watch?contentId=${item.id}&episode=1`)}
-                >
-                  {item.posterUrl ? (
-                    <img 
-                      src={item.posterUrl} 
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', getTypeGradient(item.type));
-                      }}
-                    />
-                  ) : (
-                    <span className="text-6xl">{getTypeEmoji(item.type)}</span>
-                  )}
-                  
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                  
-                  {/* Type Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/20">
-                      {getTypeLabel(item.type)}
-                    </span>
-                  </div>
-                  
-                  {/* Rating Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className="px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/20 flex items-center gap-1">
-                      <span className="text-yellow-400">★</span>
-                      {item.rating}
-                    </span>
-                  </div>
-
-                  {/* Title Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <h3 className="text-white font-bold text-lg line-clamp-2 group-hover:text-purple-300 transition-colors">
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/50">
-                      <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Content */}
-                <div className="p-4">
-                  {/* Genres */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {item.genres.slice(0, 3).map((g) => (
-                      <span 
-                        key={g.genre.id}
-                        className={`px-2 py-1 ${getGenreColor(g.genre.name)} text-white text-xs font-medium rounded-full`}
-                      >
-                        {g.genre.name}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Year and Info */}
-                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    <span>{item.year}</span>
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                      {item.status}
-                    </span>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => addToWatchlist(item.id)}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 text-sm flex items-center justify-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Watchlist
-                    </button>
-                    <button 
-                      onClick={() => router.push(`/watch?contentId=${item.id}&episode=1`)}
-                      className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 text-white py-2 px-4 rounded-lg font-medium hover:from-pink-700 hover:to-rose-700 transition-all duration-200 text-sm flex items-center justify-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                      Watch
-                    </button>
-                  </div>
-                </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton variant="rectangular" width="100%" height="288" />
+                <Skeleton variant="text" width="100%" />
+                <Skeleton variant="text" width="60%" />
               </div>
             ))}
           </div>
-        )}
+        ) : error ? (
+          <Card variant="flat" padding="lg">
+            <EmptyState
+              title="Error loading content"
+              description="Please try again later"
+              action={
+                <Button onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+              }
+            />
+          </Card>
+        ) : content && content.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+              {content.map((item: Content) => (
+                <ContentCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  titleAlt={item.titleAlt}
+                  posterUrl={item.posterUrl}
+                  year={item.year}
+                  rating={item.rating}
+                  type={item.type}
+                  genres={item.genres}
+                  status={item.status}
+                  onAddToWatchlist={addToWatchlist}
+                />
+              ))}
+            </div>
 
-        {!loading && content.length === 0 && (
-          <div className="text-center py-12 text-purple-600 dark:text-purple-300">
-            No content found matching your criteria.
-          </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="secondary"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? 'primary' : 'secondary'}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Card variant="flat" padding="lg">
+            <EmptyState
+              title="No content found"
+              description="Try adjusting your filters or search terms"
+              action={
+                <Button onClick={() => {
+                  setSearchTerm('');
+                  setSelectedGenre('All');
+                  setSelectedType('All');
+                  updateURL({});
+                }}>
+                  Clear Filters
+                </Button>
+              }
+            />
+          </Card>
         )}
       </div>
     </div>
@@ -365,13 +301,15 @@ function CatalogContent() {
 
 export default function Catalog() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-purple-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center py-12 text-purple-600 dark:text-purple-300">
-          Loading catalog...
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
         </div>
       </div>
-    </div>}>
+    }>
       <CatalogContent />
     </Suspense>
   );

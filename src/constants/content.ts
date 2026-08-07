@@ -19,9 +19,9 @@ export const GENRES = [
   'Isekai',
   'Historical',
   'Slice of Life',
-] as const;
+];
 
-export const SEASONS = ['Winter', 'Spring', 'Summer', 'Fall'] as const;
+export const SEASONS = ['Winter', 'Spring', 'Summer', 'Fall'];
 
 export const CONTENT_FORMATS = [
   'TV',
@@ -31,14 +31,14 @@ export const CONTENT_FORMATS = [
   'Movie',
   'Special',
   'Music',
-] as const;
+];
 
 export const CONTENT_STATUS = [
   'Airing',
   'Completed',
   'Upcoming',
   'Cancelled',
-] as const;
+];
 
 export const GENRE_COLORS: Record<string, string> = {
   'Action': 'bg-red-500',
@@ -59,7 +59,7 @@ export const GENRE_COLORS: Record<string, string> = {
   'Psychological': 'bg-slate-500',
   'Isekai': 'bg-amber-500',
   'Historical': 'bg-stone-500',
-} as const;
+};
 
 export const SORT_OPTIONS = [
   { value: 'popularity', label: 'Popularity' },
@@ -67,9 +67,14 @@ export const SORT_OPTIONS = [
   { value: 'latest', label: 'Latest' },
   { value: 'title', label: 'Title (A-Z)' },
   { value: 'year', label: 'Year' },
-] as const;
+];
 
 export const FILTER_RANGES = {
   year: { min: 1950, max: new Date().getFullYear() + 2 },
   rating: { min: 0, max: 10 },
-} as const;
+};
+
+export const pagination = {
+  defaultPageSize: 24,
+  pageSizeOptions: [12, 24, 48, 96],
+};
