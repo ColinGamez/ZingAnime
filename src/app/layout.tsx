@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import SessionProvider from "@/components/SessionProvider";
+import { ToastProvider } from "@/ui/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZingAnime - Your Gateway to Anime",
-  description: "Discover and watch anime from the 2000s, 2010s, and underground gems",
+  title: "ZingAnime - Your Gateway to Anime & Asian Media",
+  description: "Discover anime, K-dramas, C-dramas, and J-dramas. Track your watchlist and stream your favorite content.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -27,8 +28,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <SessionProvider>
-          <Navigation />
-          <main className="flex-1">{children}</main>
+          <ToastProvider>
+            <Navigation />
+            <main className="flex-1">{children}</main>
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

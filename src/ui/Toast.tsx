@@ -1,3 +1,5 @@
+'use client';
+
 // Toast notification system
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 

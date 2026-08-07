@@ -107,7 +107,7 @@ export const ContentCard = memo(function ContentCard({
         )}
         
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-          <span>{formatYear(year)}</span>
+          <span>{year}</span>
           {status && (
             <span className="text-xs">{status}</span>
           )}

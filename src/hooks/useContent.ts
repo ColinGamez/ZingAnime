@@ -24,11 +24,20 @@ export interface UseContentOptions {
   limit?: number;
 }
 
+export interface ContentResponse {
+  data: Content[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export function useContent(options: UseContentOptions = {}) {
   const [data, setData] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchContent = useCallback(async () => {
     setLoading(true);
@@ -49,9 +58,10 @@ export function useContent(options: UseContentOptions = {}) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      setData(result.data || result);
+      const result: ContentResponse = await response.json();
+      setData(result.data || []);
       setTotal(result.total || 0);
+      setTotalPages(result.totalPages || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch content');
       console.error('Error fetching content:', err);
@@ -64,5 +74,5 @@ export function useContent(options: UseContentOptions = {}) {
     fetchContent();
   }, [fetchContent]);
 
-  return { data, loading, error, total, refetch: fetchContent };
+  return { data, loading, error, total, totalPages, refetch: fetchContent };
 }
